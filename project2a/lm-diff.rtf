@@ -1,0 +1,140 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2709
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs22 \cf2 \CocoaLigature0 Last login: Tue Nov 14 20:46:26 on ttys002\
+erikaibarra@MacBook-Pro-368 ~ % cd Desktop \
+erikaibarra@MacBook-Pro-368 Desktop % diff gpt2_actual.py minGPT/lm-evaluation-harness/lm_eval/models/minGPT.py\
+5a6,8\
+> import sys\
+> sys.path.append("../../../")\
+> from mingpt.model import GPT\
+6a10\
+> \
+17c21\
+< class HFLM(BaseLM):\
+---\
+> class minGPT(BaseLM):\
+24,28d27\
+<         pretrained="gpt2",\
+<         revision="main",\
+<         low_cpu_mem_usage=None,\
+<         subfolder=None,\
+<         tokenizer=None,\
+30,34c29\
+<         max_batch_size=512,\
+<         max_length=None,\
+<         load_in_8bit: Optional[bool] = False,\
+<         trust_remote_code: Optional[bool] = False,\
+<         dtype: Optional[Union[str, torch.dtype]] = "auto",\
+---\
+>         max_length=1024\
+38,99c33,39\
+<         # Initialize model\
+<         if isinstance(pretrained, transformers.PreTrainedModel):\
+<             self.model = pretrained\
+<             self._device = self.model.device\
+< \
+<             if tokenizer:\
+<                 assert isinstance(\
+<                     tokenizer, transformers.PreTrainedTokenizer\
+<                 ) or isinstance(tokenizer, transformers.PreTrainedTokenizerFast)\
+<                 self.tokenizer = tokenizer\
+<             else:\
+<                 # Get tokenizer\
+<                 model_name = self.model.name_or_path\
+<                 self.tokenizer = transformers.AutoTokenizer.from_pretrained(\
+<                     model_name,\
+<                     revision=revision,\
+<                     trust_remote_code=trust_remote_code,\
+<                 )\
+< \
+<         elif isinstance(pretrained, str):\
+< \
+<             # Initialize device\
+<             assert isinstance(device, str)\
+<             device_list = set(\
+<                 ["cuda", "cpu"]\
+<                 + [f"cuda:\{i\}" for i in range(torch.cuda.device_count())]\
+<             )\
+<             if device and device in device_list:\
+<                 self._device = torch.device(device)\
+<                 print(f"Using device '\{device\}'")\
+<             else:\
+<                 print("Device not specified")\
+<                 print(f"Cuda Available? \{torch.cuda.is_available()\}")\
+<                 self._device = (\
+<                     torch.device("cuda")\
+<                     if torch.cuda.is_available()\
+<                     else torch.device("cpu")\
+<                 )\
+<             revision = revision + ("/" + subfolder if subfolder is not None else "")\
+< \
+<             # Initialize new model and tokenizer instances\
+<             self.model = transformers.AutoModelForCausalLM.from_pretrained(\
+<                 pretrained,\
+<                 load_in_8bit=load_in_8bit,\
+<                 low_cpu_mem_usage=low_cpu_mem_usage,\
+<                 revision=revision,\
+<                 torch_dtype=_get_dtype(dtype),\
+<                 trust_remote_code=trust_remote_code,\
+<             ).to(self.device)\
+<             self.tokenizer = transformers.AutoTokenizer.from_pretrained(\
+<                 tokenizer if tokenizer else pretrained,\
+<                 revision=revision,\
+<                 trust_remote_code=trust_remote_code,\
+<             )\
+< \
+<         else:\
+<             raise TypeError(\
+<                 "Parameter pretrained should be of type str or transformers.PreTrainedModel"\
+<             )\
+< \
+<         self.model.eval()\
+< \
+---\
+>         self._device = (\
+>             torch.device("cuda")\
+>             if torch.cuda.is_available()\
+>             else torch.device("cpu")\
+>         )\
+>            \
+>         self.tokenizer = transformers.GPT2Tokenizer.from_pretrained('/home/eibarra2/compute/gpt2')\
+100a41,46\
+>         \
+>         model_config = GPT.get_default_config()\
+>         model_config.model_type = 'gpt-nano'\
+>         model_config.vocab_size = self.tokenizer.vocab_size\
+>         model_config.block_size = max_length\
+>         model_config.checkpoint = '/home/eibarra2/compute/minGPT/checkpoints/thepile/checkpoint_1.pth'\
+102,113c48,53\
+<         # Validate batch_size\
+<         assert isinstance(batch_size, (int, str))\
+< \
+<         # setup for automatic batch size detection\
+<         if str(batch_size).startswith("auto"):\
+<             batch_size = batch_size.split(":")\
+<             self.batch_size_per_gpu = batch_size[0]\
+<             self.batch_schedule = float(batch_size[1]) if len(batch_size) > 1 else 1\
+<         else:\
+<             self.batch_size_per_gpu = int(batch_size)\
+<         self.max_batch_size = max_batch_size\
+< \
+---\
+>         self.model = GPT(model_config).to(self.device)\
+>         #self.model.load_state_dict(torch.load('/home/eibarra2/compute/minGPT/checkpoints/custom/checkpoint_3.pth'))\
+>         self.model.to(device)\
+>         self.model.eval()\
+>       \
+>         self.batch_size_per_gpu = int(batch_size)\
+115a56\
+> \
+177c118\
+< GPT2LM = HFLM\
+---\
+> #GPT = minGPT\
+\\ No newline at end of file\
+erikaibarra@MacBook-Pro-368 Desktop %}
